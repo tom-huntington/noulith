@@ -4114,6 +4114,32 @@ pub fn initialize(env: &mut Env) {
             (a, b) => slice(a, Some(b), None),
         },
     });
+    env.insert_builtin(TwoArgBuiltin {
+        name: "stride".to_string(),
+        body: |a, b| match (a, b) {
+            (Obj::Seq(s), b) => match s {
+                Seq::List(xx) => {
+                    let stride = match b {
+                        Obj::Num(n) => n.to_isize().ok_or(NErr::index_error(format!(
+                            "Slice index out of bounds of isize or non-integer: {:?}",
+                            n
+                        ))),
+                        _ => Err(NErr::type_error("not implemented".to_string())),
+                    }?;
+                    match stride.cmp(&0) {
+                        Ordering::Less => Ok(Obj::list(xx.iter().rev().step_by((-stride).to_usize().unwrap()).cloned().collect())),
+                        Ordering::Equal=> Err(NErr::type_error("Stride step cant be zero".to_string())),
+                        Ordering::Greater => Ok(Obj::list(xx.iter().step_by(stride.to_usize().unwrap()).cloned().collect())),
+                    }
+                    
+                },
+                _ => Err(NErr::type_error("not implemented".to_string())),
+                
+            },
+            _ => Err(NErr::type_error("stride first argument is not a sequence".to_string())),
+            //(a, b) => slice(a, Some(b), None),
+        },
+    });
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "find".to_string(),
         body: |env, mut a, b| match b {
