@@ -1117,7 +1117,7 @@ impl Builtin for Fold {
                     _ => Err(NErr::type_error("fold: not callable".to_string())),
                 }
             }
-            Few3::Three(mut s, f, mut cur) => {
+            Few3::Three(mut s, mut cur, f) => {
                 let it = mut_obj_into_iter(&mut s, "fold")?;
                 match f {
                     Obj::Func(f, _) => {
@@ -1141,7 +1141,7 @@ impl Builtin for Fold {
     fn try_chain(&self, other: &Func) -> Option<Func> {
         match other {
             Func::Builtin(b) => match b.builtin_name() {
-                "from" => Some(Func::Builtin(Rc::new(self.clone()))),
+                "with" => Some(Func::Builtin(Rc::new(self.clone()))),
                 _ => None,
             },
             _ => None,
