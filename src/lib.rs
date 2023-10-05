@@ -1151,6 +1151,48 @@ impl Builtin for Fold {
 
 // takes an optional starting value
 #[derive(Debug, Clone)]
+struct FFold;
+
+impl Builtin for FFold {
+    fn run(&self, env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
+        match few3(args) {
+            Few3::Zero => Err(NErr::argument_error("ffold: no args".to_string())),
+            Few3::One(_arg) => Err(NErr::argument_error("ffold: one arg".to_string())),
+            Few3::Two(_s, _f) => Err(NErr::argument_error("ffold: two args, needs three".to_string())),
+            Few3::Three( mut cur, mut s, f) => {
+                let it = mut_obj_into_iter(&mut s, "ffold")?;
+                match f {
+                    Obj::Func(f, _) => {
+                        // not sure if any standard fallible rust methods work...
+                        for e in it {
+                            cur = f.run(env, vec![cur, e?])?;
+                        }
+                        Ok(cur)
+                    }
+                    _ => Err(NErr::type_error("fold: not callable".to_string())),
+                }
+            }
+            Few3::Many(_) => Err(NErr::argument_error("fold: too many args".to_string())),
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "ffold"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+
+// takes an optional starting value
+#[derive(Debug, Clone)]
 struct Scan;
 
 impl Builtin for Scan {
@@ -3503,6 +3545,7 @@ pub fn initialize(env: &mut Env) {
         },
     });
     env.insert_builtin(Fold);
+    env.insert_builtin(FFold);
     env.insert_builtin(Scan);
     env.insert_builtin(TwoArgBuiltin {
         name: "<=>".to_string(),
