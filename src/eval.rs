@@ -680,14 +680,14 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LocExpr) -> NRes<Obj> {
                 } => Ok(Obj::list(eval_seq(env, xs)?)),
                 _ => evaluate(env, rhs),
             }?;
-
+            let res_copy = res.clone();
             let ret = if *every {
                 assign_every(&env, &p, None, res)
             } else {
                 assign(&env, &p, None, res)
             };
             add_trace(ret, format!("assign"), expr.start, expr.end)?;
-            Ok(Obj::Null)
+            Ok(res_copy)
         }
         Expr::Annotation(s, _) => evaluate(env, s),
         Expr::Consume(pat) => match eval_lvalue(env, pat)? {
