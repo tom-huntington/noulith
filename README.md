@@ -1,3 +1,82 @@
+# Fork Readme
+
+Goal: advent of code solutions in a single expression. Writen left to right, top to bottom.
+
+Python generator expressions are bad because they are naturally written Verb Subject. Want everything to be Subject Verb.
+
+## syntax design
+
+
+For single expressions to be readable the largest expression Subject has to be written first with
+```
+> [1,2] fold 10 with +
+[10, 11, 12]
+```
+when the expression for the inital value `10` of fold is larger than that of the list `[1,2]` we must have a way of flipping the arguments. The `flip` built doesn't work properly with. So I added a ffold builtin
+```
+10 ffold [1,2] with +
+```
+but a flip should be an operator so we can do 
+```
+10 ~fold [1,2] with +
+```
+but with any function.
+
+
+###### Block indenting to replace parantheses.
+```
+[1, 2] fold (...) with (...) then print
+```
+could be written
+```
+[1, 2] fold
+    ...
+    ...
+with
+    ...
+    ...
+then print
+```
+
+###### First class reverse function application
+
+`then` loosely-binding reverse function application is ambigious when following closures
+```
+[1,2] map \x -> (x+1) then print
+```
+Should be 
+```
+[1,2] map (\x -> (x+1)) then print
+```
+but actually is
+```
+[1,2] map \x -> ((x+1) then print)
+```
+
+All function application should be reverse function application. Remove normal function application entirely
+
+
+###### Strided pythonic indexing.
+There is no support for step yet
+```
+(...)[start:stop:step]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Original Readme
 An attempt to give myself a new Pareto-optimal choice for quick-and-dirty scripts, particularly when I'm not on a dev computer, and to practice writing a more realistic programming language instead of the [overengineered stack-based nonsense](https://github.com/betaveros/paradoc) I spend too much time on. ([Crafting Interpreters](https://craftinginterpreters.com/) is such a good book, I have no excuses.)
 
 ## Elevator pitches (and anti-pitches)
