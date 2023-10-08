@@ -2,7 +2,7 @@
 
 Goal: advent of code solutions in a single expression. Writen left to right, top to bottom.
 
-Python generator expressions are bad because they are naturally written Verb Subject. Want everything to be Subject Verb.
+Python generator expressions are bad because they are naturally written Verb Subject order. Want everything to be Subject Verb.
 
 ## syntax design
 
