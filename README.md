@@ -4,7 +4,7 @@ Goal: advent of code solutions in a single expression. Writen left to right, top
 
 Python generator expressions are bad because they are naturally written Verb Subject order. Want everything to be Subject Verb.
 
-## syntax design
+### syntax design
 
 
 For single expressions to be readable the largest expression Subject has to be written first with
@@ -23,7 +23,7 @@ but a flip should be an operator so we can do
 but with any function.
 
 
-###### Block indenting to replace parantheses.
+### Block indenting to replace parantheses.
 ```
 [1, 2] fold (...) with (...) then print
 ```
@@ -38,7 +38,7 @@ with
 then print
 ```
 
-###### First class reverse function application
+### First class reverse function application
 
 `then` loosely-binding reverse function application is ambigious when following closures
 ```
@@ -56,7 +56,7 @@ but actually is
 All function application should be reverse function application. Remove normal function application entirely
 
 
-###### Strided pythonic indexing.
+### Strided pythonic indexing.
 There is no support for step yet
 ```
 (...)[start:stop:step]
