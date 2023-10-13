@@ -3148,10 +3148,11 @@ pub fn initialize(env: &mut Env) {
         name: "∌".to_string(),
         body: |a, b| Ok(Obj::from(!obj_in(b, a)?)),
     });
-    env.insert_builtin(EnvTwoArgBuiltin {
+    env.insert_builtin_with_precedence(EnvTwoArgBuiltin {
         name: ".".to_string(),
         body: |env, a, b| call(env, b, vec![a]),
-    });
+    }, Precedence(DEFAULT_PRECEDENCE, Assoc::Left),
+    );
     env.insert_builtin(EnvTwoArgBuiltin {
         name: ".>".to_string(),
         body: |env, a, b| call(env, b, vec![a]),
