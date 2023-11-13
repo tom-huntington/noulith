@@ -3059,6 +3059,41 @@ impl Parser {
                     })
                 }
                 Token::RightParen => Err(self.error_here(format!("atom: unexpected"))),
+                Token::Case => {
+                    let param = Lvalue::IndexedIdent("switch".to_string(), Vec::new());
+                    let scrutinee = LocExpr {
+                        expr: Expr::Ident("switch".to_string()),
+                        start: start,
+                        end: start,
+                    };
+                    let mut v = Vec::new();
+                    // FIXME copypasta...
+                    while let Some(_) = self.try_consume(&Token::Case) {
+                        let pat =
+                            to_lvalue(self.annotated_pattern(true, "lambda-switch pat")?)?;
+                        self.require(Token::RightArrow, "lambda-case mid: ->".to_string())?;
+                        let res = self.single("lambda-switch body")?;
+                        v.push((Box::new(pat), Box::new(res)));
+                    }
+                    match v.last() {
+                        Some((_, e)) => {
+                            let end = e.end;
+                            Ok(LocExpr {
+                                start,
+                                end: e.end,
+                                expr: Expr::Lambda(
+                                    Rc::new(vec![Box::new(param)]),
+                                    Rc::new(LocExpr {
+                                        expr: Expr::Switch(Box::new(scrutinee), v),
+                                        start,
+                                        end,
+                                    }),
+                                ),
+                            })
+                        }
+                        None => Err(self.error_here(format!("lambda-switch: no cases")))?,
+                    }
+                }
                 Token::Lambda => {
                     self.advance();
                     match self.peek_loc_token() {
