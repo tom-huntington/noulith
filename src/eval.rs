@@ -1474,6 +1474,7 @@ pub fn eval_lvalue_as_obj(env: &REnv, expr: &EvaluatedLvalue) -> NRes<Obj> {
 pub fn call(env: &REnv, f: Obj, args: Vec<Obj>) -> NRes<Obj> {
     match f {
         Obj::Func(ff, _) => ff.run(env, args),
+        Obj::Seq(_) => index(f, args[0].clone()),
         _ => Err(NErr::type_error(format!(
             "Can't call non-function {}",
             FmtObj::debug(&f)
@@ -1484,6 +1485,7 @@ pub fn call(env: &REnv, f: Obj, args: Vec<Obj>) -> NRes<Obj> {
 pub fn call_or_part_apply(env: &REnv, f: Obj, args: Vec<Obj>) -> NRes<Obj> {
     match f {
         Obj::Func(ff, _) => ff.run(env, args),
+        Obj::Seq(_) => index(f, args[0].clone()),
         f => match few(args) {
             Few::One(Obj::Func(f2, _)) => Ok(Obj::Func(
                 Func::PartialApp1(Box::new(f2), Box::new(f)),
