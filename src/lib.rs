@@ -1190,12 +1190,12 @@ impl Builtin for FFold {
         }
     }
 }
-// takes an optional starting value
+
 #[derive(Debug, Clone)]
 struct Then;
 
 impl Builtin for Then {
-    fn run(&self, env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
+    fn run(&self, _env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
         match few3(args) {
             Few3::Zero => Err(NErr::argument_error("then: no args".to_string())),
             Few3::One(_arg) => Err(NErr::argument_error("then: one arg".to_string())),
@@ -1224,7 +1224,47 @@ impl Builtin for Then {
     fn try_chain(&self, other: &Func) -> Option<Func> {
         match other {
             Func::Builtin(b) => match b.builtin_name() {
-                "else" | "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                "else" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+#[derive(Debug, Clone)]
+struct If;
+
+impl Builtin for If {
+    fn run(&self, _env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
+        match few3(args) {
+            Few3::Zero => Err(NErr::argument_error("if: no args".to_string())),
+            Few3::One(_arg) => Err(NErr::argument_error("if: one arg".to_string())),
+            Few3::Two(t, b) => {
+                if b.truthy() {
+                    Ok(t)
+                } else {
+                    Ok(Obj::Null)
+                }
+            },
+            Few3::Three( t, b, f) => {
+                if b.truthy() {
+                    Ok(t)
+                } else {
+                    Ok(f)
+                }
+            }
+            Few3::Many(_) => Err(NErr::argument_error("fold: too many args".to_string())),
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "if"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "else" => Some(Func::Builtin(Rc::new(self.clone()))),
                 _ => None,
             },
             _ => None,
@@ -3590,6 +3630,7 @@ pub fn initialize(env: &mut Env) {
     env.insert_builtin(Fold);
     env.insert_builtin(FFold);
     env.insert_builtin(Then);
+    env.insert_builtin(If);
     env.insert_builtin(Scan);
     env.insert_builtin(TwoArgBuiltin {
         name: "<=>".to_string(),
