@@ -3991,6 +3991,7 @@ pub const INDEX_PRECEDENCE: f64 = 7.0;
 pub const DOT_PRECEDENCE: f64 = 8.0;
 
 pub fn default_precedence(name: &str) -> f64 {
+    return DEFAULT_PRECEDENCE;
     name.chars()
         .map(|c| {
             if c.is_alphanumeric() || c == '_' {
