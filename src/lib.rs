@@ -2470,14 +2470,16 @@ fn drop_while(s: Seq, f: Func, env: &REnv) -> NRes<Obj> {
             drop_while_inner(RcVecIter::of(&mut s), env, f)?.collect(),
         )))),
         Seq::Stream(s) => {
-            let mut t = s.clone_box();
-            while let Some(x) = t.peek() {
-                let x = x?;
-                if f.run(env, vec![x.clone()])?.truthy() {
-                    t.next();
-                }
-            }
-            Ok(Obj::Seq(Seq::Stream(Rc::from(t))))
+            // Need seperate stream struct for drop_while
+            Err(NErr::throw("drop_while not implemented for streams".to_string()))
+            // let mut t = s.clone_box();
+            // while let Some(x) = t.peek() {
+            //     let x = x?;
+            //     if f.run(env, vec![x.clone()])?.truthy() {
+            //         t.next();
+            //     }
+            // }
+            // Ok(Obj::Seq(Seq::Stream(Rc::from(t))))
         }
     }
 }

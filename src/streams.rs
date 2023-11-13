@@ -22,9 +22,6 @@ impl Display for Repeat {
     }
 }
 impl Stream for Repeat {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(self.0.clone()))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -89,9 +86,6 @@ impl Display for Cycle {
     }
 }
 impl Stream for Cycle {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(self.0[self.1].clone()))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -148,13 +142,6 @@ impl Display for Range {
     }
 }
 impl Stream for Range {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        if self.empty() {
-            None
-        } else {
-            Some(Ok(Obj::from(self.0.clone())))
-        }
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -232,15 +219,6 @@ impl Display for Permutations {
     }
 }
 impl Stream for Permutations {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(Obj::list(
-            self.1
-                .as_ref()?
-                .iter()
-                .map(|i| self.0[*i].clone())
-                .collect(),
-        )))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -315,15 +293,6 @@ impl Display for Combinations {
     }
 }
 impl Stream for Combinations {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(Obj::list(
-            self.1
-                .as_ref()?
-                .iter()
-                .map(|i| self.0[*i].clone())
-                .collect(),
-        )))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -385,16 +354,6 @@ impl Display for Subsequences {
     }
 }
 impl Stream for Subsequences {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(Obj::list(
-            self.1
-                .as_ref()?
-                .iter()
-                .zip(self.0.iter())
-                .filter_map(|(b, x)| if *b { Some(x.clone()) } else { None })
-                .collect(),
-        )))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -461,15 +420,6 @@ impl Display for CartesianPower {
     }
 }
 impl Stream for CartesianPower {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        Some(Ok(Obj::list(
-            self.1
-                .as_ref()?
-                .iter()
-                .map(|i| self.0[*i].clone())
-                .collect(),
-        )))
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -541,13 +491,6 @@ impl Display for Iterate {
     }
 }
 impl Stream for Iterate {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        match &self.0 {
-            Ok((obj, _, _)) => Some(Ok(obj.clone())),
-            Err(NErr::Break(None)) => None,
-            Err(e) => Some(Err(e.clone())),
-        }
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }
@@ -611,17 +554,6 @@ impl Display for MappedStream {
     }
 }
 impl Stream for MappedStream {
-    fn peek(&self) -> Option<NRes<Obj>> {
-        let (inner, func, renv) = self.0.as_ref().ok()?;
-        match inner.peek()? {
-            Ok(inxt) => match func.run(&renv, vec![inxt]) {
-                Ok(nxt) => Some(Ok(nxt)),
-                Err(e) => Some(Err(e.clone())),
-            },
-            Err(NErr::Break(None)) => None,
-            Err(e) => Some(Err(e)),
-        }
-    }
     fn clone_box(&self) -> Box<dyn Stream> {
         Box::new(self.clone())
     }

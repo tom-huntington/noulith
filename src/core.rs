@@ -156,7 +156,6 @@ pub fn pythonic_slice<T>(xs: &[T], lo: Option<isize>, hi: Option<isize>) -> (usi
 //
 // more using this as "lazy, possibly infinite list" rn i.e. trying to support indexing etc.
 pub trait Stream: Iterator<Item = NRes<Obj>> + Display + Debug {
-    fn peek(&self) -> Option<NRes<Obj>>;
     fn clone_box(&self) -> Box<dyn Stream>;
     // FIXME: this used to mean "length or infinity" but it increasingly looks like we actually
     // want streams where we can't determine their length by inspection, so this type doesn't make
