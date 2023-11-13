@@ -1190,6 +1190,47 @@ impl Builtin for FFold {
         }
     }
 }
+// takes an optional starting value
+#[derive(Debug, Clone)]
+struct Then;
+
+impl Builtin for Then {
+    fn run(&self, env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
+        match few3(args) {
+            Few3::Zero => Err(NErr::argument_error("then: no args".to_string())),
+            Few3::One(_arg) => Err(NErr::argument_error("then: one arg".to_string())),
+            Few3::Two(b, t) => {
+                if b.truthy() {
+                    Ok(t)
+                } else {
+                    Ok(Obj::Null)
+                }
+            },
+            Few3::Three( b, t, f) => {
+                if b.truthy() {
+                    Ok(t)
+                } else {
+                    Ok(f)
+                }
+            }
+            Few3::Many(_) => Err(NErr::argument_error("fold: too many args".to_string())),
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "then"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "els" | "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
 
 // takes an optional starting value
 #[derive(Debug, Clone)]
@@ -3092,10 +3133,10 @@ pub fn initialize(env: &mut Env) {
             ))),
         },
     });
-    env.insert_builtin(EnvTwoArgBuiltin {
-        name: "then".to_string(),
-        body: |env, a, b| call(env, b, vec![a]),
-    });
+    // env.insert_builtin(EnvTwoArgBuiltin {
+    //     name: "then".to_string(),
+    //     body: |env, a, b| call(env, b, vec![a]),
+    // });
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "apply".to_string(),
         body: |env, mut a, b| {
@@ -3117,6 +3158,7 @@ pub fn initialize(env: &mut Env) {
         },
     });
     env.insert_builtin(Preposition("by".to_string()));
+    env.insert_builtin(Preposition("els".to_string()));
     env.insert_builtin(Preposition("with".to_string()));
     env.insert_builtin(Preposition("from".to_string()));
     env.insert_builtin(Preposition("default".to_string()));
@@ -3547,6 +3589,7 @@ pub fn initialize(env: &mut Env) {
     });
     env.insert_builtin(Fold);
     env.insert_builtin(FFold);
+    env.insert_builtin(Then);
     env.insert_builtin(Scan);
     env.insert_builtin(TwoArgBuiltin {
         name: "<=>".to_string(),
