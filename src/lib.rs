@@ -1151,16 +1151,16 @@ impl Builtin for Fold {
 
 // takes an optional starting value
 #[derive(Debug, Clone)]
-struct FFold;
+struct Accumulate;
 
-impl Builtin for FFold {
+impl Builtin for Accumulate {
     fn run(&self, env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
         match few3(args) {
-            Few3::Zero => Err(NErr::argument_error("ffold: no args".to_string())),
-            Few3::One(_arg) => Err(NErr::argument_error("ffold: one arg".to_string())),
-            Few3::Two(_s, _f) => Err(NErr::argument_error("ffold: two args, needs three".to_string())),
+            Few3::Zero => Err(NErr::argument_error("accumulate: no args".to_string())),
+            Few3::One(_arg) => Err(NErr::argument_error("accumulate: one arg".to_string())),
+            Few3::Two(_s, _f) => Err(NErr::argument_error("accumulate: two args, needs three".to_string())),
             Few3::Three( mut cur, mut s, f) => {
-                let it = mut_obj_into_iter(&mut s, "ffold")?;
+                let it = mut_obj_into_iter(&mut s, "accumulate")?;
                 match f {
                     Obj::Func(f, _) => {
                         // not sure if any standard fallible rust methods work...
@@ -1169,15 +1169,15 @@ impl Builtin for FFold {
                         }
                         Ok(cur)
                     }
-                    _ => Err(NErr::type_error("fold: not callable".to_string())),
+                    _ => Err(NErr::type_error("accumulate: argument not callable".to_string())),
                 }
             }
-            Few3::Many(_) => Err(NErr::argument_error("fold: too many args".to_string())),
+            Few3::Many(_) => Err(NErr::argument_error("accumulate: too many args".to_string())),
         }
     }
 
     fn builtin_name(&self) -> &str {
-        "ffold"
+        "accumulate"
     }
 
     fn try_chain(&self, other: &Func) -> Option<Func> {
@@ -3628,7 +3628,7 @@ pub fn initialize(env: &mut Env) {
         },
     });
     env.insert_builtin(Fold);
-    env.insert_builtin(FFold);
+    env.insert_builtin(Accumulate);
     env.insert_builtin(Then);
     env.insert_builtin(If);
     env.insert_builtin(Scan);

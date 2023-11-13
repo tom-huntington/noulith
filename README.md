@@ -34,8 +34,9 @@ noulith> 2 . (case "a" -> 1 case x : int -> x*x)
 
 
 ### Fold
+`accumulate` is `fold` with arguments flipped:
 ```
-noulith> 10 ffold [1,2] with +
+noulith> 10 accumulate [1,2] with +
 \10: 13: int
 noulith> [1,2] fold 10 with +
 \11: 13: int
