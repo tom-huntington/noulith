@@ -499,8 +499,8 @@ impl<'a> Lexer<'a> {
                             }
                         } else {
                             self.emit(match acc.as_str() {
-                                "if" => Token::If,
-                                "else" => Token::Else,
+                                "if_" => Token::If,
+                                "else_" => Token::Else,
                                 "while" => Token::While,
                                 "for" => Token::For,
                                 "yield" => Token::Yield,

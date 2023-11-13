@@ -1224,7 +1224,7 @@ impl Builtin for Then {
     fn try_chain(&self, other: &Func) -> Option<Func> {
         match other {
             Func::Builtin(b) => match b.builtin_name() {
-                "els" | "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                "else" | "with" => Some(Func::Builtin(Rc::new(self.clone()))),
                 _ => None,
             },
             _ => None,
@@ -3158,7 +3158,7 @@ pub fn initialize(env: &mut Env) {
         },
     });
     env.insert_builtin(Preposition("by".to_string()));
-    env.insert_builtin(Preposition("els".to_string()));
+    env.insert_builtin(Preposition("else".to_string()));
     env.insert_builtin(Preposition("with".to_string()));
     env.insert_builtin(Preposition("from".to_string()));
     env.insert_builtin(Preposition("default".to_string()));
