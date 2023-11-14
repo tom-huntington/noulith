@@ -1233,6 +1233,35 @@ impl Builtin for LazyScan {
 }
 
 #[derive(Debug, Clone)]
+struct LazyPartialFold;
+
+impl Builtin for LazyPartialFold {
+    fn run(&self, env: &REnv, mut args: Vec<Obj>) -> NRes<Obj> {
+        if args.len() != 3 {
+            Err(NErr::argument_error(format!("lazy_partial_fold: needs 3 args got {}", args.len())))
+        }
+        else {
+            args.swap(0, 1);
+            LazyScan.run(env, args)
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "lazy_partial_fold"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct Then;
 
 impl Builtin for Then {
@@ -1360,6 +1389,35 @@ impl Builtin for Scan {
 
     fn builtin_name(&self) -> &str {
         "scan"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
+// takes an optional starting value
+#[derive(Debug, Clone)]
+struct PartialFold;
+
+impl Builtin for PartialFold {
+    fn run(&self, env: &REnv, mut args: Vec<Obj>) -> NRes<Obj> {
+        if args.len() != 3 {
+            Err(NErr::argument_error(format!("partial_fold: needs 3 args got {}", args.len())))
+        }
+        else {
+            args.swap(0, 1);
+            Scan.run(env, args)
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "partial_fold"
     }
 
     fn try_chain(&self, other: &Func) -> Option<Func> {
@@ -3392,6 +3450,7 @@ pub fn initialize(env: &mut Env) {
         },
     });
     env.insert_builtin(LazyScan);
+    env.insert_builtin(LazyPartialFold);
     // env.insert_builtin(EnvTwoArgBuiltin {
     //     name: "lazy_scan".to_string(),
     //     body: |env, a, b| match (a, b) {
@@ -3686,6 +3745,7 @@ pub fn initialize(env: &mut Env) {
     env.insert_builtin(Then);
     env.insert_builtin(If);
     env.insert_builtin(Scan);
+    env.insert_builtin(PartialFold);
     env.insert_builtin(TwoArgBuiltin {
         name: "<=>".to_string(),
         body: |a, b| match ncmp(&a, &b) {

@@ -33,7 +33,7 @@ noulith> 2 . (case "a" -> 1 case x : int -> x*x)
 ```
 
 
-### Fold
+### Folding
 `accumulate` is `fold` with arguments flipped:
 ```
 noulith> 10 accumulate [1,2] with +
@@ -43,6 +43,10 @@ noulith> [1,2] fold 10 with +
 noulith> [1,2] fold +
 \12: 3: int
 ```
+`scan :: [b] -> a -> (a -> b -> a) -> [a]`
+`partial_fold :: a -> [b] -> (a -> b -> a) -> [a]`
+
+There is also `lazy_scan` and `lazy_partial_fold` that take and return streams rather than lists.
 
 ### Conditionals
 `if` expressions use python's ordering
