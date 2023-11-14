@@ -95,6 +95,16 @@ arg0 op1 arg1 op2 arg2 . _[1:-1]
 ```
 
 
+### Lazy iterators
+Most higher order functions are eager. But there is `lazy_map` and `lazy_scan`. But these haven't been dogfooded.
+
+
+
+
+
+
+
+
 
 
 

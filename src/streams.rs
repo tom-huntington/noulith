@@ -566,3 +566,79 @@ impl Stream for MappedStream {
     }
     */
 }
+
+// TODO: remove ScannedStream and MappedStream with dyn Iterator i.e. type erased iterators
+pub struct ScannedStream(pub NRes<(Box<dyn Stream>, Obj, Func, REnv)>, pub Option<Obj>);
+impl Clone for ScannedStream {
+    fn clone(&self) -> ScannedStream {
+        match &self.0 {
+            Err(e) => ScannedStream(Err(e.clone()), None),
+            Ok((inner, init, func, renv)) => {
+                ScannedStream(Ok((inner.clone_box(), init.clone(), func.clone(), renv.clone())), self.1.clone())
+            }
+        }
+    }
+}
+// directly debug-printing env can easily recurse infinitely
+impl Debug for ScannedStream {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match &self.0 {
+            Err(NErr::Break(None)) => write!(fmt, "ScannedStream(stopped)"),
+            Err(e) => write!(fmt, "ScannedStream(ERROR: {:?})", e),
+            Ok((inner, init, func, _)) => write!(fmt, "ScannedStream({:?}, {:?}, {:?}, ...)", inner, init, func),
+        }
+    }
+}
+impl Iterator for ScannedStream {
+    type Item = NRes<Obj>;
+    fn next(&mut self) -> Option<NRes<Obj>> {
+        let (inner, init, func, renv) = self.0.as_mut().ok()?;
+        
+        if let Some(acc) = self.1.take() {
+            match inner.next() {
+                Some(Err(e)) => {
+                    self.0 = Err(e.clone());
+                    Some(Err(e))
+                }
+                Some(Ok(cur)) => match func.run(&renv, vec![cur, acc]) {
+                    Ok(nxt) => {
+                        self.1 = Some(nxt.clone());
+                        Some(Ok(nxt))
+                    },
+                    Err(e) => {
+                        self.0 = Err(e.clone());
+                        Some(Err(e))
+                    }
+                },
+                None => {
+                    self.0 = Err(NErr::Break(None));
+                    None
+                }
+            }
+        } else {
+            self.1 = Some(init.clone());
+            Some(Ok(init.clone()))
+        }
+    }
+}
+impl Display for ScannedStream {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Ok((inner, init, func, _)) => write!(formatter, "ScannedStream({}, {}, {}, ...)", inner, init, func),
+            Err(e) => write!(formatter, "ScannedStream(ERROR: {})", e),
+        }
+    }
+}
+impl Stream for ScannedStream {
+    fn clone_box(&self) -> Box<dyn Stream> {
+        Box::new(self.clone())
+    }
+    /*
+    fn len(&self) -> Option<usize> {
+        match &self.0 {
+            Ok((inner, _, _)) => inner.len(),
+            Err(_) => Some(0),
+        }
+    }
+    */
+}

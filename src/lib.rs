@@ -1190,6 +1190,47 @@ impl Builtin for Accumulate {
         }
     }
 }
+// takes an optional starting value
+#[derive(Debug, Clone)]
+struct LazyScan;
+
+impl Builtin for LazyScan {
+    fn run(&self, env: &REnv, args: Vec<Obj>) -> NRes<Obj> {
+        match few3(args) {
+            Few3::Zero => Err(NErr::argument_error("lazy_scan: no args".to_string())),
+            Few3::One(_arg) => Err(NErr::argument_error("lazy_scan: one arg".to_string())),
+            Few3::Two(_s, _f) => Err(NErr::argument_error("lazy_scan: two args, needs three".to_string())),
+            Few3::Three( s, init, f) => {
+                match f {
+                    Obj::Func(f, _) => {
+                        match &s {
+                            Obj::Seq(Seq::Stream(s)) => Ok(Obj::Seq(Seq::Stream(Rc::new(
+                                ScannedStream(Ok((s.clone_box(), init, f, Rc::clone(env))), None),
+                            )))),
+                            _ => Err(NErr::type_error("lazy_scan: init not a stream".to_string())),
+                        }
+                    }
+                    _ => Err(NErr::type_error("lazy_scan: argument not callable".to_string())),
+                }
+            }
+            Few3::Many(_) => Err(NErr::argument_error("lazy_scan: too many args".to_string())),
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "lazy_scan"
+    }
+
+    fn try_chain(&self, other: &Func) -> Option<Func> {
+        match other {
+            Func::Builtin(b) => match b.builtin_name() {
+                "with" => Some(Func::Builtin(Rc::new(self.clone()))),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 struct Then;
@@ -3350,6 +3391,17 @@ pub fn initialize(env: &mut Env) {
             (a, b) => Err(NErr::argument_error_2(&a, &b)),
         },
     });
+    env.insert_builtin(LazyScan);
+    // env.insert_builtin(EnvTwoArgBuiltin {
+    //     name: "lazy_scan".to_string(),
+    //     body: |env, a, b| match (a, b) {
+    //         (Obj::Seq(Seq::Stream(s)), Obj::Func(b, _)) => Ok(Obj::Seq(Seq::Stream(Rc::new(
+    //             ScannedStream(Ok((s.clone_box(), b, Rc::clone(env))), None),
+    //         )))),
+    //         (a, b) => Err(NErr::argument_error_2(&a, &b)),
+    //     },
+    // });
+    
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "each".to_string(),
         body: |env, mut a, b| {
