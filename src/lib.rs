@@ -4129,6 +4129,36 @@ pub fn initialize(env: &mut Env) {
             (a, b) => Err(NErr::argument_error_2(&a, &b)),
         },
     });
+    env.insert_builtin(TwoArgBuiltin {
+        name: "locate_all".to_string(),
+        body: |a, b| match (a, b) {
+            (Obj::Seq(Seq::String(a)), Obj::Seq(Seq::String(b))) => {
+                let r = Regex::new(&b)
+                    .map_err(|e| NErr::value_error(format!("invalid regex: {}", e)))?;
+                if r.capture_locations().len() == 1 {
+                    Ok(Obj::list(
+                        r.find_iter(&a).map(|c| Obj::from(c.start())).collect(),
+                    ))
+                } else {
+                    Ok(Obj::list(
+                        r.captures_iter(&a)
+                            .map(|c| {
+                                Obj::list(
+                                    c.iter()
+                                        .map(|cap| match cap {
+                                            None => Obj::Null, // didn't participate
+                                            Some(s) => Obj::from(s.start()),
+                                        })
+                                        .collect(),
+                                )
+                            })
+                            .collect(),
+                    ))
+                }
+            }
+            (a, b) => Err(NErr::argument_error_2(&a, &b)),
+        },
+    });
     env.insert_builtin(Replace);
 
     // Haskell-ism for partial application (when that works)
