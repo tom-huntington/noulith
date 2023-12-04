@@ -104,7 +104,9 @@ Most higher order functions are eager. But there is `lazy_map` and `lazy_scan`. 
 
 
 
+## How to learn builtins
 
+[Betaveros](https://github.com/betaveros) has reasonable documentation, in his README below. But for the complete documentation search `/src/lib.rs`.
 
 
 
