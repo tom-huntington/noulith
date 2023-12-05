@@ -3789,7 +3789,7 @@ pub fn initialize(env: &mut Env) {
                     Ok(())
                 })
                 .map_err(|e| NErr::io_error(format!("writing {}", e)))?;
-            Ok(Obj::Null)
+            Ok(args.first().map(Obj::clone).unwrap_or(Obj::Null))
         },
     });
     env.insert_builtin(BasicBuiltin {
