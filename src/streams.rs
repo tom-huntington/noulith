@@ -600,7 +600,7 @@ impl Iterator for ScannedStream {
                     self.0 = Err(e.clone());
                     Some(Err(e))
                 }
-                Some(Ok(cur)) => match func.run(&renv, vec![cur, acc]) {
+                Some(Ok(cur)) => match func.run(&renv, vec![acc, cur]) {
                     Ok(nxt) => {
                         self.1 = Some(nxt.clone());
                         Some(Ok(nxt))
