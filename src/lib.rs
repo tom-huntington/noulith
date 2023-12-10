@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
+use std::ops::Add;
 use std::rc::Rc;
 
 use regex::Regex;
@@ -2489,6 +2490,20 @@ fn take_while_inner<T: Clone + Into<Obj>>(
     }
     Ok(acc)
 }
+fn stop_at_inner<T: Clone + Into<Obj>>(
+    mut it: impl Iterator<Item = T>,
+    env: &REnv,
+    f: Func,
+) -> NRes<Vec<T>> {
+    let mut acc = Vec::new();
+    while let Some(x) = it.next() {
+        acc.push(x.clone());
+        if f.run(env, vec![x.into()])?.truthy() {
+            return Ok(acc);
+        }
+    }
+    Ok(acc)
+}
 
 // weird lil guy that doesn't fit
 fn take_while(s: Seq, f: Func, env: &REnv) -> NRes<Obj> {
@@ -2522,6 +2537,44 @@ fn take_while(s: Seq, f: Func, env: &REnv) -> NRes<Obj> {
                 if f.run(env, vec![x.clone()])?.truthy() {
                     acc.push(x)
                 } else {
+                    return Ok(Obj::list(acc));
+                }
+            }
+            Ok(Obj::list(acc))
+        }
+    }
+}
+// how to remove duplication???
+fn stop_at(s: Seq, f: Func, env: &REnv) -> NRes<Obj> {
+    match s {
+        Seq::List(mut s) => Ok(Obj::list(stop_at_inner(RcVecIter::of(&mut s), env, f)?)),
+        Seq::String(mut s) => Ok(Obj::from(
+            stop_at_inner(RcStringIter::of(&mut s), env, f)?
+                .into_iter()
+                .collect::<String>(),
+        )),
+        Seq::Dict(mut s, _def) => Ok(Obj::list(stop_at_inner(
+            RcHashMapIter::of(&mut s).map(|(k, _v)| key_to_obj(k)),
+            env,
+            f,
+        )?)),
+        Seq::Vector(mut s) => Ok(Obj::Seq(Seq::Vector(Rc::new(stop_at_inner(
+            RcVecIter::of(&mut s),
+            env,
+            f,
+        )?)))),
+        Seq::Bytes(mut s) => Ok(Obj::Seq(Seq::Bytes(Rc::new(stop_at_inner(
+            RcVecIter::of(&mut s),
+            env,
+            f,
+        )?)))),
+        Seq::Stream(s) => {
+            let mut acc = Vec::new();
+            let mut s = s.clone_box();
+            while let Some(x) = s.next() {
+                let x = x?;
+                acc.push(x.clone());
+                if f.run(env, vec![x])?.truthy() {
                     return Ok(Obj::list(acc));
                 }
             }
@@ -4385,6 +4438,14 @@ pub fn initialize(env: &mut Env) {
         body: |env, a, b| match (a, b) {
             (Obj::Seq(s), Obj::Func(f, _)) => take_while(s, f, env),
             (a, b) => slice(a, None, Some(b)),
+        },
+    });
+    env.insert_builtin(EnvTwoArgBuiltin {
+        name: "stop_at".to_string(),
+        body: |env, a, b| match (a, b) {
+            (Obj::Seq(s), Obj::Func(f, _)) => stop_at(s, f, env),
+            _ => Err(NErr::argument_error("not implemented yet".to_string()))
+            //(a, Obj::Num(b)) => slice(a, None, Some(b.factorial().add(1))),
         },
     });
     env.insert_builtin(EnvTwoArgBuiltin {
