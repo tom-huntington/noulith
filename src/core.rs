@@ -12,6 +12,7 @@ use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
+use num::Complex;
 use num::bigint::BigInt;
 use num::complex::Complex64;
 use num::BigRational;
@@ -646,6 +647,25 @@ pub fn call_type(ty: &ObjType, arg: Vec<Obj>) -> NRes<Obj> {
                     "struct construction: wrong number of arguments: {}, wanted {}",
                     arg.len(),
                     s.size
+                )))
+            }
+        },
+        ObjType::Complex => {
+            match &arg[..] {
+                [Obj::Num(a), Obj::Num(b)] => {
+                    Ok(Obj::Num(NNum::Complex(Complex64::new(to_f64_ok(&a)?, to_f64_ok(&b)?))))
+                },
+                [c] => match c {
+                    Obj::Seq(Seq::Vector(s)) => Ok(Obj::Seq(Seq::Vector(s.clone()))),
+                    Obj::Seq(Seq::List(s)) => match &s[..] {
+                        [Obj::Num(a), Obj::Num(b)] => Ok(Obj::Num(NNum::Complex(Complex64::new(to_f64_ok(&a)?, to_f64_ok(&b)?)))),
+                        _ => Err(NErr::argument_error(format!("Can only convert length two list to complex: got length {}", s.len()))),
+                    },
+                    _ => Err(NErr::argument_error(format!("complex construction: wrong type for single argument: {}", c,))), 
+                },
+                _ => Err(NErr::argument_error(format!(
+                    "complex construction: wrong number of arguments: {}, wanted 1 (list length 2) or 2",
+                    arg.len(),
                 )))
             }
         }
