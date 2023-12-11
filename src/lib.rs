@@ -4306,6 +4306,26 @@ pub fn initialize(env: &mut Env) {
         },
         "+.",
     );
+    env.insert_builtin(
+        TwoArgBuiltin {
+            name: "prepend".to_string(),
+            body: |a, b| match a {
+                Obj::Seq(Seq::List(mut a)) => {
+                    Rc::make_mut(&mut a).insert(0, b);
+                    Ok(Obj::Seq(Seq::List(a)))
+                }
+                Obj::Seq(Seq::Vector(mut a)) => {
+                    Rc::make_mut(&mut a).insert(0, to_nnum(b, "prepend to vector")?);
+                    Ok(Obj::Seq(Seq::Vector(a)))
+                }
+                Obj::Seq(Seq::Bytes(mut a)) => {
+                    Rc::make_mut(&mut a).insert(0, to_byte(b, "prepend to bytes")?);
+                    Ok(Obj::Seq(Seq::Bytes(a)))
+                }
+                a => Err(NErr::argument_error_2(&a, &b)),
+            },
+        },
+    );
     env.insert_builtin(TwoArgBuiltin {
         name: "..".to_string(),
         body: |a, b| Ok(Obj::list(vec![a, b])),
