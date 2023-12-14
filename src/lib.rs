@@ -4499,24 +4499,20 @@ pub fn initialize(env: &mut Env) {
     env.insert_builtin(TwoArgBuiltin {
         name: "stride".to_string(),
         body: |a, b| match (a, b) {
-            (Obj::Seq(s), b) => match s {
-                Seq::List(xx) => {
-                    let stride = match b {
-                        Obj::Num(n) => n.to_isize().ok_or(NErr::index_error(format!(
-                            "Slice index out of bounds of isize or non-integer: {:?}",
-                            n
-                        ))),
-                        _ => Err(NErr::type_error("not implemented".to_string())),
-                    }?;
+            (Obj::Seq(Seq::List(s)), Obj::Num(n) ) => {
+                    let stride = n.to_isize().ok_or(NErr::index_error(format!(
+                            "Stride index out of bounds of isize or non-integer: {:?}", n)))?;
                     match stride.cmp(&0) {
-                        Ordering::Less => Ok(Obj::list(xx.iter().rev().step_by((-stride).to_usize().unwrap()).cloned().collect())),
+                        Ordering::Less => Ok(Obj::list(s.iter().rev().step_by((-stride).to_usize().unwrap()).cloned().collect())),
                         Ordering::Equal=> Err(NErr::type_error("Stride step cant be zero".to_string())),
-                        Ordering::Greater => Ok(Obj::list(xx.iter().step_by(stride.to_usize().unwrap()).cloned().collect())),
+                        Ordering::Greater => Ok(Obj::list(s.iter().step_by(stride.to_usize().unwrap()).cloned().collect())),
                     }
-                    
                 },
-                _ => Err(NErr::type_error("not implemented".to_string())),
-                
+            (Obj::Seq(Seq::Stream(s)), Obj::Num(n)) => {
+                Ok(Obj::Seq(Seq::Stream(Rc::new(StridedStream(Ok((s.clone_box(), n.to_usize().ok_or(
+                    NErr::index_error(format!(
+                        "Stride index out of bounds of usize or non-integer: {:?}", n)))?
+                , 0)))))))
             },
             _ => Err(NErr::type_error("stride first argument is not a sequence".to_string())),
             //(a, b) => slice(a, Some(b), None),

@@ -566,6 +566,73 @@ impl Stream for MappedStream {
     }
     */
 }
+pub struct StridedStream(pub NRes<(Box<dyn Stream>, usize, usize)>);
+impl Clone for StridedStream {
+    fn clone(&self) -> StridedStream {
+        match &self.0 {
+            Err(e) => StridedStream(Err(e.clone())),
+            Ok((inner, stride, pos)) => {
+                StridedStream(Ok((inner.clone_box(), stride.clone(), pos.clone())))
+            }
+        }
+    }
+}
+// directly debug-printing env can easily recurse infinitely
+impl Debug for StridedStream {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match &self.0 {
+            Err(NErr::Break(None)) => write!(fmt, "StridedStream(stopped)"),
+            Err(e) => write!(fmt, "StridedStream(ERROR: {:?})", e),
+            Ok((inner, stride, size)) => write!(fmt, "StridedStream({:?}, {:?}, {:?},...)", inner, stride, size),
+        }
+    }
+}
+impl Iterator for StridedStream {
+    type Item = NRes<Obj>;
+    fn next(&mut self) -> Option<NRes<Obj>> {
+        let (inner, stride, size) = self.0.as_mut().ok()?;
+        loop {
+            match inner.next() {
+                Some(Err(e)) => {
+                    self.0 = Err(e.clone());
+                    return Some(Err(e))
+                }
+                Some(Ok(cur)) => {
+                    if *size % *stride == 0 {
+                        *size += 1;
+                        return Some(Ok(cur));
+                    }
+                    *size += 1;
+                },
+                None => {
+                    self.0 = Err(NErr::Break(None));
+                    return None;
+                }
+            }
+        }
+    }
+}
+impl Display for StridedStream {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match &self.0 {
+            Ok((inner, stride, pos)) => write!(formatter, "StridedStream({}, {}, {}, ...)", inner, stride, pos),
+            Err(e) => write!(formatter, "StridedStream(ERROR: {})", e),
+        }
+    }
+}
+impl Stream for StridedStream {
+    fn clone_box(&self) -> Box<dyn Stream> {
+        Box::new(self.clone())
+    }
+    /*
+    fn len(&self) -> Option<usize> {
+        match &self.0 {
+            Ok((inner, _, _)) => inner.len(),
+            Err(_) => Some(0),
+        }
+    }
+    */
+}
 
 // TODO: remove ScannedStream and MappedStream with dyn Iterator i.e. type erased iterators
 pub struct ScannedStream(pub NRes<(Box<dyn Stream>, Obj, Func, REnv)>, pub Option<Obj>);
