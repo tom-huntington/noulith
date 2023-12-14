@@ -4468,6 +4468,27 @@ pub fn initialize(env: &mut Env) {
             //(a, Obj::Num(b)) => slice(a, None, Some(b.factorial().add(1))),
         },
     });
+    env.insert_builtin(OneArgBuiltin {
+        name: "stop_at_dup".to_string(),
+        body: |a| match a {
+            Obj::Seq(Seq::Stream(s)) => {
+                    let mut set: HashSet<ObjKey> = Default::default();//to_key(k?)
+                    let mut acc = Vec::new();
+                    let mut s = s.clone_box();
+                    while let Some(x) = s.next() {
+                        let x = x?;
+                        set.insert(to_key(x.clone())?);
+                        acc.push(x);
+                        if acc.len() != set.len() {
+                            return Ok(Obj::list(acc));
+                        }
+                    }
+                    Ok(Obj::list(acc))
+            },
+            _ => Err(NErr::argument_error("not implemented yet".to_string()))
+            //(a, Obj::Num(b)) => slice(a, None, Some(b.factorial().add(1))),
+        },
+    });
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "drop".to_string(),
         body: |env, a, b| match (a, b) {
