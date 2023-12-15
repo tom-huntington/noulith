@@ -4729,15 +4729,27 @@ pub fn initialize(env: &mut Env) {
             a => Err(NErr::argument_error_1(&a)),
         },
     });
-    env.insert_builtin(OneArgBuiltin {
+    env.insert_builtin(BasicBuiltin {
         name: "enumerate".to_string(),
-        body: |mut a| {
-            Ok(Obj::list(
-                mut_obj_into_iter(&mut a, "enumerate conversion")?
-                    .enumerate()
-                    .map(|(k, v)| Ok(Obj::list(vec![Obj::from(k), v?])))
-                    .collect::<NRes<Vec<Obj>>>()?,
-            ))
+        body: |_, mut a| match few2(a) {
+            Few2::One(mut a) => {
+                Ok(Obj::list(
+                    mut_obj_into_iter(&mut a, "enumerate conversion")?
+                        .enumerate()
+                        .map(|(k, v)| Ok(Obj::list(vec![Obj::from(k), v?])))
+                        .collect::<NRes<Vec<Obj>>>()?,
+                ))
+            },
+            Few2::Two(mut a, Obj::Num(start)) => {
+                Ok(Obj::list(
+                    mut_obj_into_iter(&mut a, "enumerate conversion")?
+                        .enumerate()
+                        .map(|(k, v)| Ok(Obj::list(vec![Obj::from(BigInt::from(k) +start.to_bigint().ok_or(
+                            NErr::index_error(format!("Enumerate start out of bounds of isize or non-integer: {:?}", start)))?), v?])))
+                        .collect::<NRes<Vec<Obj>>>()?,
+                ))
+            },
+            _ => Err(NErr::argument_error("Enumerate only accepts one or two arguments".to_string()))
         },
     });
 
