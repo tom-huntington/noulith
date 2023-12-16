@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::ops::Add;
 use std::rc::Rc;
+use num::complex::Complex64;
 
 use regex::Regex;
 
@@ -3146,8 +3147,12 @@ pub fn initialize(env: &mut Env) {
     });
     env.insert_builtin(OneNumBuiltin {
         name: "round".to_string(),
-        body: |a| {
-            Ok(Obj::Num(a.round().ok_or(NErr::value_error(
+        body: |a| match a {
+            NNum::Complex(Complex64{re, im}) => {Ok(Obj::Num(NNum::Complex(Complex64::new(
+                re.round(),
+                im.round()
+            ))))},
+            _ => Ok(Obj::Num(a.round().ok_or(NErr::value_error(
                 "can't coerce to int".to_string(),
             ))?))
         },
@@ -3202,6 +3207,13 @@ pub fn initialize(env: &mut Env) {
         body: |a| match a.to_f64_or_inf_or_complex() {
             Ok(_) => Ok(Obj::from(0.0)),
             Err(c) => Ok(Obj::from(c.im)),
+        },
+    });
+    env.insert_builtin(OneNumBuiltin {
+        name: "conjugate".to_string(),
+        body: |a| match a.to_f64_or_inf_or_complex() {
+            Ok(_) => Ok(Obj::Num(a)),
+            Err(c) => Ok(Obj::from(c.conj()))
         },
     });
     env.insert_builtin(OneNumBuiltin {
