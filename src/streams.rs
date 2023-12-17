@@ -709,3 +709,59 @@ impl Stream for ScannedStream {
     }
     */
 }
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+struct TotalOrderWrapper(Obj);
+
+impl Eq for TotalOrderWrapper {}
+
+impl Ord for TotalOrderWrapper {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.partial_cmp(other) {
+            Some(o) => o,
+            None => std::cmp::Ordering::Equal
+        }
+        // match (self.0, other.0) {
+        //     (Obj::Num(a), Obj::Num(b)) => a.cmp(b),
+        //     (Obj::Seq(a), Obj::Seq(b)) => a.cmp(b),
+        //     _ => std::cmp::Ordering::Equal,
+        // }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HeapStream(NRes<(std::collections::BinaryHeap<TotalOrderWrapper>, Func, REnv)>);
+
+impl HeapStream {
+    pub fn new(o: Obj, f: Func, renv : REnv) -> HeapStream {
+        let mut heap = std::collections::BinaryHeap::<TotalOrderWrapper>::new();
+        heap.push(TotalOrderWrapper(o));
+        HeapStream(Ok((heap, f, renv)))
+    }
+}
+
+impl Iterator for HeapStream {
+    type Item = NRes<Obj>;
+    fn next(&mut self) -> Option<NRes<Obj>> {
+        let (heap, func, renv) = self.0.as_mut().ok()?;
+        // This does not match LazyStream. Should error out Stream state for future next calls???
+        let ret = func.run(renv, vec![heap.pop()?.0]).ok()?;
+
+        if let Obj::Seq(Seq::List(v)) = ret.clone() {
+             heap.extend(v.iter().map(|o| TotalOrderWrapper(o.clone())))
+        } else {
+            return Some(Err(NErr::type_error(format!("HeapStream func must return lists. Got {:?}", ret))));
+        }
+        Some(Ok(ret))
+    }
+}
+impl Display for HeapStream {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(formatter, "HeapStream(...)")
+    }
+}
+impl Stream for HeapStream {
+    fn clone_box(&self) -> Box<dyn Stream> {
+        Box::new(self.clone())
+    }
+}

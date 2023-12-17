@@ -3512,6 +3512,13 @@ pub fn initialize(env: &mut Env) {
             f => Err(NErr::argument_error_2(&a, &f)),
         },
     });
+    env.insert_builtin(EnvTwoArgBuiltin {
+        name: "heap_iterate".to_string(),
+        body: |env, a, f| match f {
+            Obj::Func(f, _) => Ok(Obj::Seq(Seq::Stream(Rc::new(HeapStream::new(a, f, env.clone()))))),
+            f => Err(NErr::argument_error_2(&a, &f)),
+        },
+    });
     // haxx!!!
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "lazy_map".to_string(),
