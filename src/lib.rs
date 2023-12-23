@@ -3519,6 +3519,26 @@ pub fn initialize(env: &mut Env) {
             f => Err(NErr::argument_error_2(&a, &f)),
         },
     });
+    env.insert_builtin(EnvTwoArgBuiltin {
+        name: "take_last".to_string(),
+        body: |env, s, f| match (s, f) {
+            (Obj::Seq(Seq::Stream(s)), Obj::Func(f, _)) => {
+                let mut s = s.clone_box();
+                let mut last = s.next().ok_or(NErr::throw("take_last: no first element on stream".to_string()))??;
+                if !f.run(env, vec![last.clone()])?.truthy() {
+                    return Err(NErr::throw("take_last: first element falsy".to_string()));
+                }
+                while let Some(n) = s.next().transpose()? {
+                    if !f.run(env, vec![n.clone()])?.truthy() {
+                        break;
+                    }
+                    last = n;
+                }
+                Ok(last)
+            },
+            _ => Err(NErr::argument_error("take_last expects stream as first arg and function as second".to_string())),
+        },
+    });
     // haxx!!!
     env.insert_builtin(EnvTwoArgBuiltin {
         name: "lazy_map".to_string(),
