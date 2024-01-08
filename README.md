@@ -1,4 +1,5 @@
 # Fork Readme
+Examples: https://github.com/tom-huntington/aoc2023
 
 Goal: advent of code solutions in a single expression. Writen left to right, top to bottom.
 
